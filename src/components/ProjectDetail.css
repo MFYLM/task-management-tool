@@ -1,0 +1,47 @@
+.modal-close-btn {
+    text-decoration: solid;
+    position: relative;
+    float: right;
+}
+
+.add-task-btn {
+    float: right;
+    position: relative;
+}
+
+
+
+
+.float-container {
+    padding: 5%;
+}
+
+
+.single-owner-task-table {
+    float: left;
+}
+
+
+.table-raw {
+    margin: auto;
+    flex-wrap: wrap;
+}
+
+
+.single-owner-task-table {
+    border: 1px solid black;
+    border-radius: 0%;
+    margin: 5px;
+}
+
+
+.sidebar {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    bottom: 0;
+    min-height: 100vh !important;
+    z-index: 100;
+    padding: 40px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
