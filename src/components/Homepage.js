@@ -37,7 +37,7 @@ function Home() {
     useEffect(() => {
         // retrieve project list in here
         async function getProjects() {
-            const response = await fetch("http://localhost:5000/record");
+            const response = await fetch("http://localhost:8000/record");
 
             if (!response.ok)
             {
@@ -75,7 +75,7 @@ function Home() {
             // tasks could be created after having a new project setted up
         };
     
-        await fetch("http://localhost:5000/record/add", {
+        await fetch("http://localhost:8000/record/add", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

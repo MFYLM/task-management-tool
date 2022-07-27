@@ -26,7 +26,9 @@ function ProjectDetail() {
     const [taskDescription, setTaskDescription] = useState("");
     const [taskStatus, setTaskStatus] = useState("unfinished");
 
+    const [visibleTask, setVisibleTask] = useState(null);
     const [activeTab, setActiveTab] = useState("0");      // 0: list view, 1: calender view, 2: flowchart view
+
 
     /*
     task array structure
@@ -47,7 +49,7 @@ function ProjectDetail() {
 
     useEffect(() => {
         async function fetchProject() {
-            const response = await fetch(`http://localhost:5000/record/${projectId}`);
+            const response = await fetch(`http://localhost:8000/record/${projectId}`);
 
             if (!response.ok)
             {
@@ -79,15 +81,15 @@ function ProjectDetail() {
     // TODO: people could come with a icon/picture to help recognize (add user login sys later)
 
 
-    const editTask = (e, task) => {
+    const editTask = (id) => {
         // TODO: drop down a new page from that row to allow user edit task (proposer has to be the leader...  --> authentication for later)
-        console.log(task);
+        setVisibleTask(id);
     };
 
 
     const showTasks = tasks.map((task) => {
         return <tbody className="single-task" id={task.id}>
-            <tr className="table-row" onClick={(e) => editTask(e, task)}>
+            <tr className="table-row" onClick={() => editTask(task.id)}>
                 <th>{task.description}</th>
                 <th className="float-container">
                     { !task.prere.length ? "None"
@@ -108,6 +110,13 @@ function ProjectDetail() {
                 </th>
                 <th className="task-status">{ task.status }</th>
             </tr>
+            <Modal isOpen={
+                (visibleTask !== null && visibleTask === task.id)
+            }>
+                <p>Do you want to delete this task from current project?</p>
+                <Button onClick={() => { deleteTask(task.id); setVisibleTask(null); } }>Confirm</Button>
+                <Button onClick={() => setVisibleTask(null)}>Cancel</Button>
+            </Modal>
         </tbody>
     });
 
@@ -178,7 +187,7 @@ function ProjectDetail() {
     async function updateTask(id) {
         let newTasks = [...tasks];
 
-        for (let i = 0; i < tasks.length; ++i)
+        for ( let i = 0; i < tasks.length; ++i)
         {
             if (tasks[i].id === id)
             {
@@ -193,7 +202,7 @@ function ProjectDetail() {
             }
         }
 
-        await fetch(`http://localhost:5000/${projectId}/task/update`, {
+        await fetch(`http://localhost:8000/${projectId}/task/update`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -206,6 +215,7 @@ function ProjectDetail() {
             return;
         });
 
+        
     };
 
 
@@ -214,7 +224,7 @@ function ProjectDetail() {
             tasks: tasks.filter((task) => task.id !== id)
         }
 
-        await fetch(`http://localhost:5000/${projectId}/task/update`, {
+        await fetch(`http://localhost:8000/${projectId}/task/update`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -224,6 +234,10 @@ function ProjectDetail() {
             if (err) throw err;
             return;
         });
+
+        // after deleting one element, rerender is not triggered
+        setTasks(tasks.filter((task) => task.id !== id));
+
     };
 
 
@@ -252,7 +266,7 @@ function ProjectDetail() {
         };
 
 
-        await fetch(`http://localhost:5000/update/${updatedProject.id}`, {
+        await fetch(`http://localhost:8000/update/${updatedProject.id}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -340,13 +354,18 @@ function ProjectDetail() {
                             Flowchart View
                         </NavLink>
                     </NavItem>
+                    <NavItem>
+                        <NavLink onClick={() => setActiveTab("1")}>
+                            Gantt Chart
+                        </NavLink>
+                    </NavItem>
                 </Nav>
 
                 <TabContent activeTab={activeTab}>
                     <TabPane tabId="0">
                         <Row>
                             <Col>
-                                <h4>Content for list view</h4>
+                                <h4>Content in list</h4>
                             </Col>
                         </Row>
                         <Table>
@@ -362,10 +381,18 @@ function ProjectDetail() {
                         </Table>
                     </TabPane>
 
+                    <TabPane tabId="1">
+                        <Row>
+                            <Col>
+                                <h4>Content in Gantt</h4>
+                            </Col>
+                        </Row>
+                    </TabPane>
+
                     <TabPane tabId="2">
                         <Row>
                             <Col>
-                                <h4>Content for flowchart view</h4>
+                                <h4>Content in flowchart</h4>
                             </Col>
                         </Row>
                     </TabPane>
