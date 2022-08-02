@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Table, Form, Progress, FormGroup, Label, Input, Button } from "reactstrap";
+import { Modal, Table, Form, Progress, FormGroup, Label, Input, Button, ModalBody, ModalFooter, ModalHeader } from "reactstrap";
 import { useLocation } from "react-router-dom";
 import "./ProjectDetail.css"
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { TabContent, Nav, NavItem, NavLink, TabPane, Row, Col, Container } from "reactstrap";
-
-
+import { TabContent, Nav, NavItem, NavLink, TabPane, Row, Col, Container, Dropdown, DropdownMenu, DropdownToggle, DropdownItem } from "reactstrap";
 
 
 
@@ -14,12 +12,14 @@ function ProjectDetail() {
     const { projectId } = location.state;
 
     const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
+    const [description, setDescription] = useState("");         // this description is for project
     const [collaborators, setCollaborators] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [leader, setLeader] = useState("");
     
+    // below are for a single task
     const [showTaskForm, setShowTaskForm] = useState(false);
+    const [title, setTitle] = useState("");
     const [prere, setPrere] = useState([]);
     const [owners, setOwners] = useState([]);
     const [date, setDate] = useState(null);
@@ -27,14 +27,19 @@ function ProjectDetail() {
     const [taskStatus, setTaskStatus] = useState("unfinished");
 
     const [visibleTask, setVisibleTask] = useState(null);
-    const [activeTab, setActiveTab] = useState("0");      // 0: list view, 1: calender view, 2: flowchart view
+    const [activeTab, setActiveTab] = useState("0");      
+    // 0: list view, 1: calender view, 2: flowchart view
+
+    const status = ["unfinished", "inprogress", "completed"];
+    const [showStatusDrop, setShowStatusDrop] = useState(false);
 
 
     /*
     task array structure
     task: {
         id: ,
-        prere: [],      --> only store task id (finished task will be true, unfinished will be false)
+        title: "",
+        prere: [],      --> store {id: , title: } (finished task will be true, unfinished will be false)
         due: Date() obj (timestamp),
         owners: [],
         description: "",
@@ -45,7 +50,6 @@ function ProjectDetail() {
                                  progress bar color from red approach to green
     }
     */
-
 
     useEffect(() => {
         async function fetchProject() {
@@ -81,31 +85,62 @@ function ProjectDetail() {
     // TODO: people could come with a icon/picture to help recognize (add user login sys later)
 
 
-    const editTask = (id) => {
+    const editTask = (task) => {
         // TODO: drop down a new page from that row to allow user edit task (proposer has to be the leader...  --> authentication for later)
-        setVisibleTask(id);
+        setVisibleTask(task.id);
+        setTaskDescription(task.description);
+        setOwners(task.owners);
+        setPrere(task.prere);
+        setTaskStatus(task.status);
+        setTitle(task.title);
     };
 
 
+    // TODO: houseover event to show an edit button and then get to modal of submitting changed task
+    const dropDownStatus = (s) => {
+        return (
+            <div>
+                <Dropdown isOpen={ showStatusDrop } id="status-dropdown" toggle={ () => setShowStatusDrop(!showStatusDrop) }>
+                    <DropdownToggle caret>
+                        { taskStatus === s ? s: taskStatus }
+                    </DropdownToggle>
+                    <DropdownMenu>
+                        { 
+                            status.map( (status) => { 
+                                let newS = taskStatus === s ? s: taskStatus;
+                                if (status !== newS)
+                                    return <DropdownItem onClick={ () => { setTaskStatus(status); } }>{ status }</DropdownItem>;
+                            })
+                        }
+                    </DropdownMenu>
+                </Dropdown>
+            </div>
+        );
+    };
+
+
+    // TODO: allow uncheck and check people
     const showTasks = tasks.map((task) => {
         return <tbody className="single-task" id={task.id}>
-            <tr className="table-row" onClick={() => editTask(task.id)}>
-                <th>{task.description}</th>
+            <tr className="table-row" onClick={() => editTask(task)}>
+                <th>{task.title}</th>
                 <th className="float-container">
-                    { !task.prere.length ? "None"
+                    { 
+                        !task.prere.length ? "None"
                         : task.prere.map((element) => {
                             return <div className="single-prere">
-                                task# { element }
+                                { element.title }
                             </div>
-                        }) 
+                        })
                     }
                 </th>
                 <th className="float-container">
-                    { task.owners.map( (owner) => {
-                        return <div className="single-owner-task-table">
-                                {owner.email}
-                            </div>
-                    }) 
+                    { 
+                        task.owners.map( (owner) => {
+                            return <div className="single-owner-task-table">
+                                    {owner.email}
+                                </div>
+                        })
                     }
                 </th>
                 <th className="task-status">{ task.status }</th>
@@ -113,9 +148,129 @@ function ProjectDetail() {
             <Modal isOpen={
                 (visibleTask !== null && visibleTask === task.id)
             }>
-                <p>Do you want to delete this task from current project?</p>
-                <Button onClick={() => { deleteTask(task.id); setVisibleTask(null); } }>Confirm</Button>
-                <Button onClick={() => setVisibleTask(null)}>Cancel</Button>
+                <ModalHeader>
+                    <Button onClick={() => { setVisibleTask(null); setTaskDescription(""); setTaskStatus("unfinished"); }}>X</Button>
+                </ModalHeader>
+                <ModalBody>
+                    <div>prerequisites:</div>
+                    <div>
+                        { 
+                            tasks.map((element) => {
+                                if (task.id === element.id || element.prere.find((p) => task.id === p.id))
+                                    return;
+                                
+                                let flag = false;
+
+                                for (let i = 0; i < task.prere.length; ++i)
+                                {
+                                    if (task.prere[i].id === element.id)
+                                        flag = true;
+                                }
+
+                                if (flag)
+                                {
+                                    return (
+                                        <div key={element.id}>
+                                            <Input type="checkbox" defaultChecked={true} onChange={(e) => {
+                                                if (e.target.checked)
+                                                {
+                                                    setPrere(task.prere.filter((p) => p.id !== element.id));
+                                                }
+                                                else
+                                                {
+                                                    setPrere([...task.prere, { id: element.id, title: element.title }]);
+                                                }
+                                            }} />{" "}
+                                            { element.title }
+                                        </div>
+                                    );
+                                }
+                                else
+                                {
+                                    return (
+                                        <div key={element.id}>
+                                            <Input type="checkbox" defaultChecked={false} onChange={(e) => {
+                                                if (e.target.checked)
+                                                {
+                                                    setPrere(task.prere.filter((p) => p.id !== element.id));
+                                                }
+                                                else
+                                                {
+                                                    setPrere([...task.prere, { id: element.id, title: element.title }]);
+                                                }
+                                            }}/>{" "}
+                                            { element.title }
+                                        </div>
+                                    );
+                                }
+                            })
+                        }
+                    </div>
+                    
+                    <div>Owners:</div>
+                    <div>
+                        {
+                            collaborators.map((people) => {
+                                let flag = false;
+
+                                for (let i = 0; i < task.owners.length; ++i)
+                                {
+                                    if (task.owners[i].id === people.id)
+                                        flag = true;
+                                }
+
+                                if (flag)
+                                {
+                                    return (
+                                        <div key={people.id}>
+                                            <Input type="checkbox" defaultChecked={true} onChange={(e) => {
+                                                if (e.target.checked)
+                                                {
+                                                    setOwners(task.owners.filter((element) => element.id !== people.id));
+                                                }
+                                                else
+                                                {
+                                                    setOwners([...task.owners, people]);
+                                                }
+                                            }}/>{" "}
+                                            { people.email }
+                                        </div>
+                                    );
+                                }
+                                else
+                                {
+                                    return (
+                                        <div key={people.id}>
+                                            <Input type="checkbox" defaultChecked={false} onChange={(e) => {
+                                                if (e.target.checked)
+                                                {
+                                                    setOwners(task.owners.filter((element) => element.id !== people.id));
+                                                }
+                                                else
+                                                {
+                                                    setOwners([...task.owners, people]);
+                                                }
+                                            }}/>{" "}
+                                            { people.email }
+                                        </div>
+                                    );
+                                }
+                            })
+                        }
+                    </div>
+                
+                    <div>Description:</div>
+                    <div>
+                        <textarea className="textarea-edit-modal" rows="5" col="50" defaultValue={ task.description } onChange={ (e) => { setTaskDescription(e.target.value); } } />
+                    </div>
+                    <div>
+                        Status:{ dropDownStatus(task.status) }
+                    </div>
+                </ModalBody>
+                <ModalFooter>
+                    <Button onClick={() => { deleteTask(task.id); setVisibleTask(null); } }>delete project</Button>
+                    <Button onClick={ () => updateTask() }>Update Task</Button>
+                </ModalFooter>
             </Modal>
         </tbody>
     });
@@ -151,18 +306,18 @@ function ProjectDetail() {
     });
 
 
-    const handleSelectPrere = (e, id) => {
+    const handleSelectPrere = (e, tk) => {
         let newPrere;
 
         if (e.target.checked)
         {
-            newPrere = [...prere, id];
+            newPrere = [...prere, {id: tk.id, title: tk.title}];
             setPrere(newPrere);
         }
 
-        if (!e.target.checked && prere.find((element) => element === id))
+        if (!e.target.checked && prere.find((element) => element.id === tk.id))
         {
-            newPrere = prere.filter((element) => element !== id);
+            newPrere = prere.filter((element) => element.id !== tk.id);
             setPrere(newPrere);
         }
     };
@@ -171,8 +326,8 @@ function ProjectDetail() {
     const selectPrere = tasks.map((task) => {
         return <FormGroup check id={task.id}>
             <Label check>
-                <Input type="checkbox" name="radio2" onChange={(e) => handleSelectPrere(e, task.id)}/>{" "}
-                { task.description }
+                <Input type="checkbox" name="radio2" onChange={(e) => handleSelectPrere(e, task)}/>{" "}
+                { task.title }
             </Label>
         </FormGroup>
     });
@@ -183,8 +338,16 @@ function ProjectDetail() {
     };
 
 
-
+    // FIXME: somehow updateTask function is not working
     async function updateTask(id) {
+        /*
+        console.log(taskDescription);
+        console.log(title);
+        console.log(prere);
+        console.log(owners);
+        console.log(taskStatus);
+        */
+
         let newTasks = [...tasks];
 
         for ( let i = 0; i < tasks.length; ++i)
@@ -193,6 +356,7 @@ function ProjectDetail() {
             {
                 newTasks[i] = {
                     id: tasks[i].id,
+                    title: title,
                     prere: prere,
                     owners: owners,
                     description: taskDescription,
@@ -201,6 +365,12 @@ function ProjectDetail() {
                 break;
             }
         }
+
+        setTitle("");
+        setTaskDescription("");
+        setTaskStatus("unfinished");
+        setOwners([]);
+        setPrere([]);
 
         await fetch(`http://localhost:8000/${projectId}/task/update`, {
             method: "POST",
@@ -215,7 +385,7 @@ function ProjectDetail() {
             return;
         });
 
-        
+        setShowTaskForm(false);
     };
 
 
@@ -237,19 +407,32 @@ function ProjectDetail() {
 
         // after deleting one element, rerender is not triggered
         setTasks(tasks.filter((task) => task.id !== id));
-
+        setTitle("");
+        setTaskDescription("");
+        setTaskStatus("unfinished");
+        setOwners([]);
+        setPrere([]);
     };
 
 
     async function submitTask() {
         // TODO: submit a new task: change tasks array and update data in db
-        /*
-        console.log(owners);
-        console.log(taskDescription);
-        */
-        
+
+        if (title === "" || taskDescription === "")
+        {
+            window.alert("Task title or description cannot be empty");
+            return;
+        }
+
+        if (owners.length === 0)
+        {
+            window.alert("You need to select owner(s) for a task");
+            return;
+        }
+
         let updatedTasks = [...tasks, {
             id: Math.random(),
+            title: title,
             prere: prere,
             owners: owners,
             description: taskDescription,
@@ -264,7 +447,6 @@ function ProjectDetail() {
             description: description,
             tasks: updatedTasks
         };
-
 
         await fetch(`http://localhost:8000/update/${updatedProject.id}`, {
             method: "POST",
@@ -282,24 +464,20 @@ function ProjectDetail() {
 
         setPrere([]);
         setOwners([]);
+        setTitle("");
         setTaskDescription("");
     };
 
 
-
-    // const tabs                       how about routes?
-
-
-
     return (
-        <div className="project-detail">
+        <div className="project-detail" key={projectId}>
             <p><strong>{name}</strong></p>
             <p>{description}</p>
             <p>Leader: {leader}</p>
             <div>
                 { showPeople }
             </div>
-            <div>
+            <div className="add-task-modal">
                 <Button className="add-task-btn" onClick={() => setShowTaskForm(true)}>Add New Task</Button>
                 <Modal className="new-task" isOpen={showTaskForm}>
                     <Form>
@@ -313,19 +491,26 @@ function ProjectDetail() {
                                 }}> X
                             </Button>
                         </div>
+
+                        <FormGroup>
+                            <Label>Title</Label>
+                            <Input type="textarea" name="title" onChange={(e) => setTitle(e.target.value)} />
+                        </FormGroup>
+
                         <FormGroup tag="fieldset">
                             <legend>{"Owner(s)"}</legend>
                             { selectOwners }
                         </FormGroup>
                         { tasks.length !== 0 ?
                             <FormGroup className="prerequisites">
+                                Prerequisites:
                                 { selectPrere }
                             </FormGroup>
                             : ""
                         }
 
                         <FormGroup className="date-picker">
-
+                            <div>Date Picker is needed!</div>
                         </FormGroup>
 
                         <FormGroup>
@@ -337,12 +522,12 @@ function ProjectDetail() {
                     </Form>
                 </Modal>
             </div>
-            <div>
-                <div className="text-left"><strong>Project Progress</strong></div>
+            <div className="task-progress">
+                <div className="text-left"><strong>Project Progress (# of finished task / total # of tasks)</strong></div>
                 <div className="text-center">{0}%</div>
                 <Progress value={0}/>
             </div>
-            <div>
+            <div className="tab-views">
                 <Nav tabs>
                     <NavItem>
                         <NavLink onClick={() => setActiveTab("0")}>
@@ -371,7 +556,7 @@ function ProjectDetail() {
                         <Table>
                             <thead>
                                 <tr className="table-row">
-                                    <th>Description</th>
+                                    <th>Title</th>
                                     <th>Prerequisites</th>
                                     <th>Owner</th>
                                     <th>Status</th>

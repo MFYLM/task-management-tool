@@ -8,15 +8,51 @@ import React, { useState, useEffect } from "react";
 // project in the input --> a project object
 /*
 {
-    id
+    id: ,
+    due date: ,
+    title: ,        --> clickable / lead to details of a task
+    owner: [
+        id: ,
+        email
+    ],
+    color: [],      --> corresponding to different owners
 }
+
+
+similar experience with excel gantt bars but interactive
 */
 
 
-function GanttChart(project) {
+function GanttChart(projectId) {
+    const [curProject, SetCurProject] = useState(null);
+    const [color, SetColor] = useState(null);
 
 
-};
+    useEffect(() => {
+        async function fetchProject() {
+            const response = await fetch(`http://localhost:8000/record/${projectId}`);
 
+            if (!response.ok)
+            {
+                const err = `An Error Occurred: ${response.statusText}`;
+                window.alert(err);
+                return;
+            }
+
+            const project = await response.json();
+            SetCurProject(project);
+        }
+
+        fetchProject();
+
+    }, []);
+
+    const getRandomColor = () => {
+        const randomColor = "#" + Math.floor(Math.random() * 16777215).toString(16);        // generate he code between 0 and 16777215
+        return randomColor;
+    };
+
+
+}
 
 export default GanttChart;

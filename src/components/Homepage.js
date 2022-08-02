@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate, Link, Route } from "react-router-dom";
 import { Modal, ModalBody, ModalHeader, ModalFooter } from "reactstrap";
 import 'bootstrap/dist/css/bootstrap.min.css';
-
+import "./Homepage.css";
 
 
 function Home() {
@@ -32,7 +32,6 @@ function Home() {
         ]
     }
     */
-
 
     useEffect(() => {
         // retrieve project list in here
@@ -123,13 +122,13 @@ function Home() {
         return <div className="project-object" key={project._id}>
                 <Link to={path} state={ {projectId: project._id} }><strong>{project.name}</strong></Link>
                 <p>{project.description}</p>
-        </div>
+            </div>
     });
-
     // Link component needs to be used inside of route view
 
+
     return (
-            <div className="create-project">
+            <div className="project-overview">
                 <div className="header-homepage">
                     <header className="text-center"><strong>Welcome To TMT!</strong></header>
                 </div>
