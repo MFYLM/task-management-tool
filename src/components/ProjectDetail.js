@@ -22,7 +22,11 @@ function ProjectDetail() {
     const [title, setTitle] = useState("");
     const [prere, setPrere] = useState([]);
     const [owners, setOwners] = useState([]);
-    const [date, setDate] = useState(null);
+
+    const [dueDate, setDueDate] = useState(null);
+    // to get current date based on locale time --> var date = new Date().toLocaleString();
+    // TODO: date-picker!!!
+
     const [taskDescription, setTaskDescription] = useState("");
     const [taskStatus, setTaskStatus] = useState("unfinished");
 
@@ -34,16 +38,17 @@ function ProjectDetail() {
     const [showStatusDrop, setShowStatusDrop] = useState(false);
 
 
+    const [progressNum, setProgressNum] = useState(0.0);
     /*
     task array structure
     task: {
         id: ,
         title: "",
         prere: [],      --> store {id: , title: } (finished task will be true, unfinished will be false)
-        due: Date() obj (timestamp),
+        due: [startTime, endTime]               array (timestamp),
         owners: [],
         description: "",
-        status: ""
+        status: ""      --> change to int later 0: unfinished, 1: inprogress, 2: completed
         
         
         //progress: int(0 - 1) --> show as a progress bar nearby      calculated by finished steps / total steps   (different color represents how many people have checked the submitted part)
@@ -51,6 +56,8 @@ function ProjectDetail() {
     }
     */
 
+
+    // TODO: figure out when multiple states get changed, how react will re-render the web page
     useEffect(() => {
         async function fetchProject() {
             const response = await fetch(`http://localhost:8000/record/${projectId}`);
@@ -73,8 +80,9 @@ function ProjectDetail() {
         }
 
         fetchProject();
+        setProgressNum(calculateProgress());
 
-    }, [tasks.length]);
+    }, [tasks.length, owners.length, prere.length]);
 
 
     const showPeople = collaborators.map((person) => {
@@ -120,6 +128,7 @@ function ProjectDetail() {
 
 
     // TODO: allow uncheck and check people
+    // when onChange function is called, the change is already made
     const showTasks = tasks.map((task) => {
         return <tbody className="single-task" id={task.id}>
             <tr className="table-row" onClick={() => editTask(task)}>
@@ -154,7 +163,7 @@ function ProjectDetail() {
                 <ModalBody>
                     <div>prerequisites:</div>
                     <div>
-                        { 
+                        {
                             tasks.map((element) => {
                                 if (task.id === element.id || element.prere.find((p) => task.id === p.id))
                                     return;
@@ -172,7 +181,7 @@ function ProjectDetail() {
                                     return (
                                         <div key={element.id}>
                                             <Input type="checkbox" defaultChecked={true} onChange={(e) => {
-                                                if (e.target.checked)
+                                                if (!e.target.checked)
                                                 {
                                                     setPrere(task.prere.filter((p) => p.id !== element.id));
                                                 }
@@ -190,7 +199,7 @@ function ProjectDetail() {
                                     return (
                                         <div key={element.id}>
                                             <Input type="checkbox" defaultChecked={false} onChange={(e) => {
-                                                if (e.target.checked)
+                                                if (!e.target.checked)
                                                 {
                                                     setPrere(task.prere.filter((p) => p.id !== element.id));
                                                 }
@@ -224,7 +233,7 @@ function ProjectDetail() {
                                     return (
                                         <div key={people.id}>
                                             <Input type="checkbox" defaultChecked={true} onChange={(e) => {
-                                                if (e.target.checked)
+                                                if (!e.target.checked)
                                                 {
                                                     setOwners(task.owners.filter((element) => element.id !== people.id));
                                                 }
@@ -242,7 +251,7 @@ function ProjectDetail() {
                                     return (
                                         <div key={people.id}>
                                             <Input type="checkbox" defaultChecked={false} onChange={(e) => {
-                                                if (e.target.checked)
+                                                if (!e.target.checked)
                                                 {
                                                     setOwners(task.owners.filter((element) => element.id !== people.id));
                                                 }
@@ -269,7 +278,7 @@ function ProjectDetail() {
                 </ModalBody>
                 <ModalFooter>
                     <Button onClick={() => { deleteTask(task.id); setVisibleTask(null); } }>delete project</Button>
-                    <Button onClick={ () => updateTask() }>Update Task</Button>
+                    <Button onClick={ () => updateTask(task.id) }>Update Task</Button>
                 </ModalFooter>
             </Modal>
         </tbody>
@@ -350,7 +359,7 @@ function ProjectDetail() {
 
         let newTasks = [...tasks];
 
-        for ( let i = 0; i < tasks.length; ++i)
+        for (let i = 0; i < tasks.length; ++i)
         {
             if (tasks[i].id === id)
             {
@@ -366,26 +375,27 @@ function ProjectDetail() {
             }
         }
 
-        setTitle("");
-        setTaskDescription("");
-        setTaskStatus("unfinished");
-        setOwners([]);
-        setPrere([]);
+        const updatedTasks = {
+            tasks: newTasks
+        };
 
         await fetch(`http://localhost:8000/${projectId}/task/update`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                tasks: newTasks
-            })
+            body: JSON.stringify(updatedTasks)
         }).catch((err) => {
             if (err) throw err;
             return;
         });
 
-        setShowTaskForm(false);
+        setVisibleTask(false);
+        setPrere([]);
+        setOwners([]);
+        setTitle("");
+        setTaskDescription("");
+        setTaskStatus("unfinished");
     };
 
 
@@ -466,8 +476,20 @@ function ProjectDetail() {
         setOwners([]);
         setTitle("");
         setTaskDescription("");
+        setTaskStatus("unfinished");
     };
 
+
+    const calculateProgress = () => {
+        var completedItems = 0;
+        for (let i = 0; i < tasks.length; ++i)
+        {
+            if (tasks[i].status === "completed")
+                ++completedItems;
+        }
+
+        return (completedItems / (tasks.length * 0.01)).toPrecision(2);
+    };
 
     return (
         <div className="project-detail" key={projectId}>
@@ -479,7 +501,7 @@ function ProjectDetail() {
             </div>
             <div className="add-task-modal">
                 <Button className="add-task-btn" onClick={() => setShowTaskForm(true)}>Add New Task</Button>
-                <Modal className="new-task" isOpen={showTaskForm}>
+                <Modal className="new-task" isOpen={ showTaskForm }>
                     <Form>
                         <div>
                             <div className="text-center">New Task</div>
@@ -524,8 +546,8 @@ function ProjectDetail() {
             </div>
             <div className="task-progress">
                 <div className="text-left"><strong>Project Progress (# of finished task / total # of tasks)</strong></div>
-                <div className="text-center">{0}%</div>
-                <Progress value={0}/>
+                <div className="text-center">{ progressNum }%</div>
+                <Progress value={ progressNum }/>
             </div>
             <div className="tab-views">
                 <Nav tabs>

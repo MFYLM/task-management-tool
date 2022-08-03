@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 
 // TODO: each task should have a start date(current date) and end date(user input)
-/*
-
-*/
 
 // project in the input --> a project object
 /*
@@ -20,10 +17,16 @@ import React, { useState, useEffect } from "react";
 
 
 similar experience with excel gantt bars but interactive
+
+information will be stored into a new collection (projectGannt), generate necessary data after submitting a task, async function withouth interferring user interface
+
 */
 
 
 function GanttChart(projectId) {
+
+
+
     const [curProject, SetCurProject] = useState(null);
     const [color, SetColor] = useState(null);
 
