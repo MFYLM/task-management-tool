@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, Link, Route } from "react-router-dom";
-import { Modal, ModalBody, ModalHeader, ModalFooter } from "reactstrap";
+import { Modal, ModalBody, ModalHeader, ModalFooter, Button, FormGroup, Form, Input } from "reactstrap";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./Homepage.css";
 
@@ -13,6 +13,10 @@ function Home() {
     const [isOpen, setIsOpen] = useState(false);
     const [projectList, setProjectList] = useState([]);
 
+
+    const [isEditProject, setIsEditProject] = useState(false);
+    const [editProject, setEditProject] = useState(null);
+
     /*
     structure of a project
     {
@@ -20,7 +24,8 @@ function Home() {
         leader: "",
         collaborators: [
             id: int,
-            email: ""
+            userName: "",      --> [later update: collection this information from login sys]
+            email: ""          --> [later update: regular expression for validating email, send email to get confirmation of collaboration, user icon for better UX]
         ],
         description: "",
         tasks: [
@@ -51,19 +56,18 @@ function Home() {
 
         getProjects();
 
-    }, [projectList.length]);
+    }, [projectList.length, isOpen, isEditProject]);
 
 
     async function submitNewProject(e) {
-        // send value to MongoDB
         e.preventDefault();
 
-        /*
-        console.log(projectName);
-        console.log(leader);
-        console.log(collaborators);
-        console.log(description);
-        */
+        if (!collaborators.length)
+        {
+            window.alert("You need to add collaborators for your project!");
+            return;
+        }
+
         const newProject = {
             id: Math.random(),
             name: projectName,
@@ -90,7 +94,35 @@ function Home() {
     };
 
 
-    const changeCollaborator = ( e, id ) => {         
+    // TODO: only change fields of a task besides its tasks
+    async function updateProject(projectId) {
+        let newProject = {
+            name: projectName,
+            leader: leader,
+            description: description,
+            collaborators: collaborators,
+        };
+
+        const regex = /[0-9a-fA-F]{24}/
+        const id = projectId.match(regex)
+
+        const response = await fetch(`http://localhost:8000/update/${id[0]}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newProject)
+        }).catch((err) => {
+            if (err) throw err;
+            return;
+        })
+
+        setProjectName("");
+        setCollaborators([]);
+        setDescription("");
+        setLeader("");
+    };
+
+
+    const changeCollaborator = ( e, id ) => {
         // change value in submit
         let newCollaborators = [...collaborators];
         for (let i = 0; i < collaborators.length; ++i)
@@ -98,7 +130,6 @@ function Home() {
             if (collaborators[i].id === id)
                 newCollaborators[i].email = e.target.value;
         }
-
         setCollaborators(newCollaborators);
     };
 
@@ -116,12 +147,46 @@ function Home() {
     });
 
 
+    const displayCollaborators = collaborators.map((person) => {
+        return <div key={person.id}>
+            <input className="collaborators-email-username" defaultValue={person.email === "please type email here" ? "" : person.email} onChange={(e) => changeCollaborator(e, person.id)}/>
+            <Button className="remove-collaborator" onClick={() => deleteCollaborator(person.id)}>x</Button>
+        </div>;
+    });
+
+
     const showProjectList = projectList.map((project) => {
         const path = "./projectdetail/" + project._id;
 
         return <div className="project-object" key={project._id}>
                 <Link to={path} state={ {projectId: project._id} }><strong>{project.name}</strong></Link>
                 <p>{project.description}</p>
+                <Button onClick={ () => { setEditProject(project._id); setCollaborators(project.collaborators); setLeader(project.leader); setDescription(project.description); setProjectName(project.name); setIsEditProject(true); } }>Edit Project</Button>
+                <Modal isOpen={isEditProject && editProject === project._id}>
+                    <Form>
+                        <FormGroup>
+                            Name:
+                            <Input value={projectName} onChange={ (e) => setProjectName(e.target.value) }/>
+                        </FormGroup>
+
+                        <FormGroup>
+                            Leader: <Input value={ leader } onChange={ (e) => setLeader(e.target.value) }/>
+                        </FormGroup>
+
+                        <FormGroup>
+                            Description: <textarea defaultValue={description} onChange={ (e) => setDescription(e.target.value) }/>
+                        </FormGroup>
+
+                        <FormGroup>
+                            Collaborators: 
+                            <Button onClick={(e) => { setCollaborators([...collaborators, { id: Math.random(), email: "please type email here" }]); e.preventDefault(); } }>+</Button>
+                            {displayCollaborators}
+                        </FormGroup>
+
+                        <Button onClick={() => { updateProject(project._id); setIsEditProject(false);} }>Submit</Button>
+                        <Button onClick={() => { setIsEditProject(false);  setProjectName(""); setCollaborators([]); setDescription(""); setLeader("");} }>Cancel</Button>
+                    </Form>
+                </Modal>
             </div>
     });
     // Link component needs to be used inside of route view
@@ -132,7 +197,7 @@ function Home() {
                 <div className="header-homepage">
                     <header className="text-center"><strong>Welcome To TMT!</strong></header>
                 </div>
-                <button className="btn btn-outline-dark float-right" onClick={() => setIsOpen(true)}>Add New Project</button>
+                <button className="add-project-btn" onClick={() => setIsOpen(true)}>Add New Project</button>
                 <Modal isOpen={isOpen}>
                     <ModalHeader>
                         <div>Include A New Project</div>

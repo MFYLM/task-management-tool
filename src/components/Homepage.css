@@ -3,6 +3,13 @@
 }
 
 
+.add-project-btn {
+    float: right;
+    outline-style: solid;
+    outline: 2px;
+    outline-color: black;
+}
+
 .project-object {
     margin: 50px;
 }

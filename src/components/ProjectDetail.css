@@ -4,6 +4,13 @@
     float: right;
 }
 
+
+.edit-task-modal .modal-header .close-btn {
+    float: right;
+    position: relative;
+    text-decoration: solid;
+}
+
 .add-task-btn {
     float: right;
     position: relative;
@@ -21,8 +28,16 @@
 }
 
 
+.single-collaborator {
+    border: 1px solid black;
+    margin: 5px;
+    border-radius: 5%;
+}
+
 .single-owner-task-table {
     float: left;
+    border: 1px solid black;
+    border-radius: 5%;
 }
 
 

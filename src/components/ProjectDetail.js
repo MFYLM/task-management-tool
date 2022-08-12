@@ -3,8 +3,10 @@ import { Modal, Table, Form, Progress, FormGroup, Label, Input, Button, ModalBod
 import { useLocation } from "react-router-dom";
 import "./ProjectDetail.css"
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { TabContent, Nav, NavItem, NavLink, TabPane, Row, Col, Container, Dropdown, DropdownMenu, DropdownToggle, DropdownItem } from "reactstrap";
-
+import 'react-datepicker/dist/react-datepicker.css'
+import { TabContent, Nav, NavItem, NavLink, TabPane, Row, Col, Dropdown, DropdownMenu, DropdownToggle, DropdownItem } from "reactstrap";
+import DatePicker from "react-datepicker"
+import GanttChart from "./GanttChart";
 
 
 function ProjectDetail() {
@@ -16,32 +18,36 @@ function ProjectDetail() {
     const [collaborators, setCollaborators] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [leader, setLeader] = useState("");
-    
+    const [isShowCollaborators, setIsShowCollaborators] = useState(false);
+
     // below are for a single task
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [title, setTitle] = useState("");
     const [prere, setPrere] = useState([]);
     const [owners, setOwners] = useState([]);
 
-    const [dueDate, setDueDate] = useState(null);
-    // to get current date based on locale time --> var date = new Date().toLocaleString();
     // TODO: date-picker!!!
+    const [startDate, setStartDate] = useState(new Date());
+    const [dueDate, setDueDate] = useState(new Date());
+    // to get current date based on locale time --> var date = new Date().toLocaleString();
 
     const [taskDescription, setTaskDescription] = useState("");
-    const [taskStatus, setTaskStatus] = useState("unfinished");
+    const [taskStatus, setTaskStatus] = useState("unstarted");
 
     const [visibleTask, setVisibleTask] = useState(null);
     const [activeTab, setActiveTab] = useState("0");      
-    // 0: list view, 1: calender view, 2: flowchart view
+    // viewTab nums 0: list view, 1: calender view, 2: flowchart view
 
-    const status = ["unfinished", "inprogress", "completed"];
+    const status = ["unstarted", "inprogress", "completed"];
     const [showStatusDrop, setShowStatusDrop] = useState(false);
 
-
     const [progressNum, setProgressNum] = useState(0.0);
+    const [finishedTask, setFinishedTask] = useState(0);
+
+
     /*
     task array structure
-    task: {
+    task: [{
         id: ,
         title: "",
         prere: [],      --> store {id: , title: } (finished task will be true, unfinished will be false)
@@ -53,11 +59,10 @@ function ProjectDetail() {
         
         //progress: int(0 - 1) --> show as a progress bar nearby      calculated by finished steps / total steps   (different color represents how many people have checked the submitted part)
                                  progress bar color from red approach to green
-    }
+    }, ...]
     */
 
 
-    // TODO: figure out when multiple states get changed, how react will re-render the web page
     useEffect(() => {
         async function fetchProject() {
             const response = await fetch(`http://localhost:8000/record/${projectId}`);
@@ -71,7 +76,6 @@ function ProjectDetail() {
 
             const project = await response.json();              // make response into json to get result
 
-
             setName(project.name);
             setDescription(project.description);
             setCollaborators(project.collaborators);
@@ -82,15 +86,15 @@ function ProjectDetail() {
         fetchProject();
         setProgressNum(calculateProgress());
 
-    }, [tasks.length, owners.length, prere.length]);
+    }, [tasks.length, owners.length, prere.length, progressNum]);
 
 
+    // TODO: people could come with a icon/picture to help recognize [later update: add user login sys]
     const showPeople = collaborators.map((person) => {
         return <div className="single-collaborator" id={person.id}>
             person: {person.email}
         </div>
     });
-    // TODO: people could come with a icon/picture to help recognize (add user login sys later)
 
 
     const editTask = (task) => {
@@ -104,7 +108,7 @@ function ProjectDetail() {
     };
 
 
-    // TODO: houseover event to show an edit button and then get to modal of submitting changed task
+    // TODO: houseover event to show an edit button and then get to modal of submitting changed task [later update]
     const dropDownStatus = (s) => {
         return (
             <div>
@@ -127,8 +131,20 @@ function ProjectDetail() {
     };
 
 
-    // TODO: allow uncheck and check people
-    // when onChange function is called, the change is already made
+    const findColor = (text) => {
+        switch (text) {
+            case "completed":
+                return { color: "green" };
+
+            case "inprogress":
+                return { color: "yellow" };
+
+            case "unstarted":
+                return { color: "red" };
+        }
+    };
+
+    // NOTE: when onChange function is called, the change is already made
     const showTasks = tasks.map((task) => {
         return <tbody className="single-task" id={task.id}>
             <tr className="table-row" onClick={() => editTask(task)}>
@@ -152,15 +168,19 @@ function ProjectDetail() {
                         })
                     }
                 </th>
-                <th className="task-status">{ task.status }</th>
+                <th className="task-status" style={ findColor(task.status) }>{ task.status }</th>
             </tr>
-            <Modal isOpen={
+            <Modal className="edit-task-modal" isOpen={
                 (visibleTask !== null && visibleTask === task.id)
             }>
-                <ModalHeader>
-                    <Button onClick={() => { setVisibleTask(null); setTaskDescription(""); setTaskStatus("unfinished"); }}>X</Button>
+                <ModalHeader className="modal-header">
+                    <Button className="close-btn" onClick={() => { setVisibleTask(null); setTaskDescription(""); setTaskStatus("unstarted"); }}>X</Button>
+                    <div>Starts at: { task.date[0].toLocaleString() }<br />Ends at: { task.date[1].toLocaleString() }</div>
                 </ModalHeader>
                 <ModalBody>
+                    <div>Task Title:</div>
+                    <textarea className="edit-modal-title" ows="3" col="80" defaultValue={task.title} onChange={ (e) => setTitle(e.target.value) }/>
+
                     <div>prerequisites:</div>
                     <div>
                         {
@@ -267,17 +287,27 @@ function ProjectDetail() {
                             })
                         }
                     </div>
+
+                    <div>Start Date</div>
+                    <div>
+                        <DatePicker selected={ startDate } onChange={ (date) => setStartDate(date) } />
+                    </div>
+
+                    <div>Due Date</div>
+                    <div>
+                        <DatePicker selected={ dueDate } onChange={ (date) => setDueDate(date) } />
+                    </div>
                 
                     <div>Description:</div>
                     <div>
-                        <textarea className="textarea-edit-modal" rows="5" col="50" defaultValue={ task.description } onChange={ (e) => { setTaskDescription(e.target.value); } } />
+                        <textarea className="textarea-edit-modal" rows="6" col="100" defaultValue={ task.description } onChange={ (e) => { setTaskDescription(e.target.value); } } />
                     </div>
                     <div>
                         Status:{ dropDownStatus(task.status) }
                     </div>
                 </ModalBody>
                 <ModalFooter>
-                    <Button onClick={() => { deleteTask(task.id); setVisibleTask(null); } }>delete project</Button>
+                    <Button onClick={ () => { deleteTask(task.id); setVisibleTask(null); } }>delete project</Button>
                     <Button onClick={ () => updateTask(task.id) }>Update Task</Button>
                 </ModalFooter>
             </Modal>
@@ -342,21 +372,7 @@ function ProjectDetail() {
     });
 
 
-    const switchLeader = () => {
-        // TODO: change leader and update data in db
-    };
-
-
-    // FIXME: somehow updateTask function is not working
     async function updateTask(id) {
-        /*
-        console.log(taskDescription);
-        console.log(title);
-        console.log(prere);
-        console.log(owners);
-        console.log(taskStatus);
-        */
-
         let newTasks = [...tasks];
 
         for (let i = 0; i < tasks.length; ++i)
@@ -366,6 +382,7 @@ function ProjectDetail() {
                 newTasks[i] = {
                     id: tasks[i].id,
                     title: title,
+                    date: [startDate, dueDate],
                     prere: prere,
                     owners: owners,
                     description: taskDescription,
@@ -395,13 +412,33 @@ function ProjectDetail() {
         setOwners([]);
         setTitle("");
         setTaskDescription("");
-        setTaskStatus("unfinished");
+        setTaskStatus("unstarted");
+        setStartDate(new Date());
+        setDueDate(new Date());
     };
 
 
     async function deleteTask(id) {
+
+        var newTks = tasks.filter((task) => task.id !== id);
+        for (let i = 0; i < newTks.length; ++i)
+        {
+            var index = -1;
+            for (let j = 0; j < newTks[i].prere.length; ++j)
+            {
+                if (newTks[i].prere[j].id === id)
+                {
+                    index = j;
+                    break;
+                }
+            }
+
+            if (index !== -1)
+                newTks[i].prere.splice(index, 1);
+        }
+
         const newTasks = {
-            tasks: tasks.filter((task) => task.id !== id)
+            tasks: newTks
         }
 
         await fetch(`http://localhost:8000/${projectId}/task/update`, {
@@ -419,7 +456,7 @@ function ProjectDetail() {
         setTasks(tasks.filter((task) => task.id !== id));
         setTitle("");
         setTaskDescription("");
-        setTaskStatus("unfinished");
+        setTaskStatus("unstarted");
         setOwners([]);
         setPrere([]);
     };
@@ -443,10 +480,11 @@ function ProjectDetail() {
         let updatedTasks = [...tasks, {
             id: Math.random(),
             title: title,
+            date: [startDate, dueDate],
             prere: prere,
             owners: owners,
             description: taskDescription,
-            status: "unfinished"
+            status: "unstarted"
         }];
 
         const updatedProject = {
@@ -476,7 +514,9 @@ function ProjectDetail() {
         setOwners([]);
         setTitle("");
         setTaskDescription("");
-        setTaskStatus("unfinished");
+        setTaskStatus("unstarted");
+        setStartDate(new Date());
+        setDueDate(new Date());
     };
 
 
@@ -488,8 +528,15 @@ function ProjectDetail() {
                 ++completedItems;
         }
 
+        if (completedItems === tasks.length && completedItems !== 0)
+            return 1.0;
+        
+        if (completedItems === 0)
+            return 0.0;
+
         return (completedItems / (tasks.length * 0.01)).toPrecision(2);
     };
+
 
     return (
         <div className="project-detail" key={projectId}>
@@ -510,7 +557,7 @@ function ProjectDetail() {
                                 setPrere([]);
                                 setOwners([]);
                                 setTaskDescription("");
-                                }}> X
+                                }}> x
                             </Button>
                         </div>
 
@@ -532,7 +579,17 @@ function ProjectDetail() {
                         }
 
                         <FormGroup className="date-picker">
-                            <div>Date Picker is needed!</div>
+                            <div>
+                                <div>Start Date</div>
+                                <div>
+                                    <DatePicker selected={startDate} onChange={ (date) => { console.log(date); setStartDate(date); } }/>
+                                </div>
+
+                                <div>Due Date</div>
+                                <div>
+                                    <DatePicker selected={dueDate} onChange={ (date) => { console.log(date); setDueDate(date); } }/>
+                                </div>
+                            </div>
                         </FormGroup>
 
                         <FormGroup>
@@ -545,7 +602,7 @@ function ProjectDetail() {
                 </Modal>
             </div>
             <div className="task-progress">
-                <div className="text-left"><strong>Project Progress (# of finished task / total # of tasks)</strong></div>
+                <div className="text-center"><strong>Project Progress</strong></div>
                 <div className="text-center">{ progressNum }%</div>
                 <Progress value={ progressNum }/>
             </div>
@@ -594,6 +651,7 @@ function ProjectDetail() {
                                 <h4>Content in Gantt</h4>
                             </Col>
                         </Row>
+                        <GanttChart projectId={projectId} />
                     </TabPane>
 
                     <TabPane tabId="2">
@@ -609,7 +667,6 @@ function ProjectDetail() {
         </div>
     );
 };
-
 
 
 export default ProjectDetail;
