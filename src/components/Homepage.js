@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, Link, Route } from "react-router-dom";
-import { Modal, ModalBody, ModalHeader, ModalFooter, Button, FormGroup, Form, Input } from "reactstrap";
+import { Modal, ModalBody, ModalHeader, ModalFooter, Button, FormGroup, Form, Input, Container } from "reactstrap";
+import Task from "./Task";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./Homepage.css";
+import Sidebar from "./Sidebar";
 
 
 function Home() {
@@ -18,7 +20,7 @@ function Home() {
     const [editProject, setEditProject] = useState(null);
 
     /*
-    structure of a project
+    a project object                 --> object
     {
         name: "",
         leader: "",
@@ -103,8 +105,8 @@ function Home() {
             collaborators: collaborators,
         };
 
-        const regex = /[0-9a-fA-F]{24}/
-        const id = projectId.match(regex)
+        const regex = /[0-9a-fA-F]{24}/;
+        const id = projectId.match(regex);
 
         const response = await fetch(`http://localhost:8000/update/${id[0]}`, {
             method: "POST",
@@ -194,40 +196,43 @@ function Home() {
 
     return (
             <div className="project-overview">
-                <div className="header-homepage">
-                    <header className="text-center"><strong>Welcome To TMT!</strong></header>
-                </div>
-                <button className="add-project-btn" onClick={() => setIsOpen(true)}>Add New Project</button>
-                <Modal isOpen={isOpen}>
-                    <ModalHeader>
-                        <div>Include A New Project</div>
-                        <div>
-                            <button className="btn delete-button" onClick={() => setIsOpen(false)}>X</button>
+                <Sidebar />
+                <Container fluid>
+                    <div className="container">
+                        <div className="header-homepage">
+                            <header className="text-center"><strong>Welcome To TMT!</strong></header>
+                            <button className="add-project-btn" onClick={() => setIsOpen(true)}>Add New Project</button>
                         </div>
-                    </ModalHeader>
-                    <ModalBody>
-                        <form className="new-project-form">
-                            <label>Name: </label>
-                            <input className="project-name" placeholder="type here" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
-                            <br></br>
-                            <label>Leader: </label>
-                            <input className="leader-email-username" value={leader} onChange={(e) => setLeader(e.target.value)} />
-                            <br></br>
-                            <label>Collaborators: </label>
-                            <button onClick={(e) => { setCollaborators([...collaborators, { id: Math.random(), email: "please type email here" }]); e.preventDefault(); } }>+</button>
-                            { inputCollaborators }
-                            <br></br>
-                            <label>Description: </label>
-                            <textarea className="project-description" value={description} onChange={(e) => setDescription(e.target.value)}/>
-                        </form>
-                    </ModalBody>
-                    <ModalFooter>
-                        <button className="btn btn-outline-dark float-right" onClick={submitNewProject}>Submit</button>
-                    </ModalFooter>
-                </Modal>
-                <div className="project-table">
-                    { showProjectList }
-                </div>
+                        <Modal className="add-project-modal" isOpen={isOpen}>
+                            <ModalHeader>
+                                <p>Include A New Project</p>
+                                <button className="delete-button" onClick={() => setIsOpen(false)}>x</button>
+                            </ModalHeader>
+                            <ModalBody>
+                                <form className="new-project-form">
+                                    <label>Name: </label>
+                                    <input className="project-name" placeholder="type here" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
+                                    <br></br>
+                                    <label>Leader: </label>
+                                    <input className="leader-email-username" value={leader} onChange={(e) => setLeader(e.target.value)} />
+                                    <br></br>
+                                    <label>Collaborators: </label>
+                                    <button onClick={(e) => { setCollaborators([...collaborators, { id: Math.random(), email: "please type email here" }]); e.preventDefault(); } }>+</button>
+                                    { inputCollaborators }
+                                    <br></br>
+                                    <label>Description: </label>
+                                    <textarea className="project-description" value={description} onChange={(e) => setDescription(e.target.value)}/>
+                                </form>
+                            </ModalBody>
+                            <ModalFooter>
+                                <button className="btn btn-outline-dark float-right" onClick={submitNewProject}>Submit</button>
+                            </ModalFooter>
+                        </Modal>
+                        <div className="project-table">
+                            { showProjectList }
+                        </div>
+                    </div>
+                </Container>
             </div>
     );
 

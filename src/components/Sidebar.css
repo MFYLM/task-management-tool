@@ -1,0 +1,41 @@
+.sidebar {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    bottom: 0;
+    width: 150px;
+    min-height: 100vh !important;
+    z-index: 100;
+    padding: 40px 0 0;
+    box-shadow: -4px 0 10px 1px;
+    border-right: 1px;
+}
+
+.sidebar ul {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sidebar ul button {
+    border: none;
+    background: none;
+    background-color: white;
+    width: 130px;
+    height: 50px;
+}
+
+.sidebar .arrow {
+    border: solid black;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 3px;
+}
+
+
+.sidebar .right {
+    transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+}

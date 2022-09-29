@@ -1,16 +1,41 @@
-.project-table {
+.project-overview {
+    display: flex;
+}
+
+.container .project-table {
     border-style: dotted;
 }
 
+.container-fluid {
+    height: 100vh;
+    min-width: 100vh;
+    margin-left: 150px;
+    margin-right: 0;
+    padding: 0;
+}
 
-.add-project-btn {
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
+.container .add-project-btn {
     float: right;
     outline-style: solid;
     outline: 2px;
     outline-color: black;
 }
 
-.project-object {
+.container .project-object {
     margin: 50px;
 }
 
+.add-project-modal .modal-header .modal-title {
+    display: flex;
+}
+
+.add-project-modal .modal-header .modal-title .delete-button {
+    margin-left: 230px;
+    border: none;
+    background: none;
+}

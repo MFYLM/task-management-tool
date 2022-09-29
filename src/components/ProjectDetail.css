@@ -46,7 +46,6 @@
     flex-wrap: wrap;
 }
 
-
 .single-owner-task-table {
     border: 1px solid black;
     border-radius: 0%;
@@ -54,13 +53,11 @@
 }
 
 
-.sidebar {
-    position: fixed;
-    top: 0px;
-    left: 0px;
-    bottom: 0;
-    min-height: 100vh !important;
-    z-index: 100;
-    padding: 40px 0 0;
-    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+.project-detail .tab-views .nav-tabs {
+    display: flex;
+    justify-content: center;
+}
+
+.project-detail .tab-views .nav-item {
+    cursor: pointer;
 }

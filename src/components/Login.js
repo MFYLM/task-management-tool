@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import "./Login.css";
 
 
 
 function LoginPage() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [redirect, setRedirect] = useState(false);
+    const navigate = useNavigate();
 
 
     async function login() {
@@ -17,9 +18,13 @@ function LoginPage() {
             password: password
         };
 
-        const response = await fetch("/users/login", {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
+        console.log(user);
+
+        const response = await fetch("http://localhost:8000/users/login", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify(user)
         }).catch((err) => {
             if (err) throw err;
@@ -27,6 +32,7 @@ function LoginPage() {
         });
 
         console.log(response);
+
     };
 
 
@@ -52,7 +58,7 @@ function LoginPage() {
 
 
     return (
-        <div>
+        <div className="login-page">
             <p>We Provide Better Experience of Task Managing Experience</p>
             <div className="login-register">
                 <form className="log-reg-form">
@@ -60,9 +66,9 @@ function LoginPage() {
                         username: <input className="username-input" onChange={ (e) => setUsername(e.target.value) } />
                     </div>
                     <div>
-                        password: <input className="password-input" onChange={ (e) => setPassword(e.target.value) } />
+                        password: <input type={"password"} className="password-input" onChange={ (e) => setPassword(e.target.value) } />
                     </div>
-                    <button onClick={ () => login() }>login</button>
+                    <button onClick={login}>login</button>
                 </form>
             </div>
         </div>

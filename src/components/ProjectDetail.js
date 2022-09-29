@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Table, Form, Progress, FormGroup, Label, Input, Button, ModalBody, ModalFooter, ModalHeader } from "reactstrap";
 import { useLocation } from "react-router-dom";
-import "./ProjectDetail.css"
+import "./ProjectDetail.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'react-datepicker/dist/react-datepicker.css'
+import 'react-datepicker/dist/react-datepicker.css';
 import { TabContent, Nav, NavItem, NavLink, TabPane, Row, Col, Dropdown, DropdownMenu, DropdownToggle, DropdownItem } from "reactstrap";
-import DatePicker from "react-datepicker"
+import DatePicker from "react-datepicker";
 import GanttChart from "./GanttChart";
 
 
@@ -26,7 +26,6 @@ function ProjectDetail() {
     const [prere, setPrere] = useState([]);
     const [owners, setOwners] = useState([]);
 
-    // TODO: date-picker!!!
     const [startDate, setStartDate] = useState(new Date());
     const [dueDate, setDueDate] = useState(new Date());
     // to get current date based on locale time --> var date = new Date().toLocaleString();
@@ -35,14 +34,14 @@ function ProjectDetail() {
     const [taskStatus, setTaskStatus] = useState("unstarted");
 
     const [visibleTask, setVisibleTask] = useState(null);
-    const [activeTab, setActiveTab] = useState("0");      
+    const [activeTab, setActiveTab] = useState("0");
     // viewTab nums 0: list view, 1: calender view, 2: flowchart view
+    // using sessionStorage to store and it will be cleared after tab is closed
 
     const status = ["unstarted", "inprogress", "completed"];
     const [showStatusDrop, setShowStatusDrop] = useState(false);
 
     const [progressNum, setProgressNum] = useState(0.0);
-    const [finishedTask, setFinishedTask] = useState(0);
 
 
     /*
@@ -86,7 +85,7 @@ function ProjectDetail() {
         fetchProject();
         setProgressNum(calculateProgress());
 
-    }, [tasks.length, owners.length, prere.length, progressNum]);
+    }, [taskStatus, tasks.length, owners.length, prere.length, progressNum]);
 
 
     // TODO: people could come with a icon/picture to help recognize [later update: add user login sys]
@@ -307,7 +306,7 @@ function ProjectDetail() {
                     </div>
                 </ModalBody>
                 <ModalFooter>
-                    <Button onClick={ () => { deleteTask(task.id); setVisibleTask(null); } }>delete project</Button>
+                    <Button onClick={ () => { deleteTask(task.id); setVisibleTask(null); } }>delete task</Button>
                     <Button onClick={ () => updateTask(task.id) }>Update Task</Button>
                 </ModalFooter>
             </Modal>
@@ -407,6 +406,8 @@ function ProjectDetail() {
             return;
         });
 
+        // Worrying about state changes will not affect in one render? make a huge state which contains all information
+        // you need and apply useState and setter on that!
         setVisibleTask(false);
         setPrere([]);
         setOwners([]);
@@ -415,6 +416,8 @@ function ProjectDetail() {
         setTaskStatus("unstarted");
         setStartDate(new Date());
         setDueDate(new Date());
+
+        window.onload();
     };
 
 
@@ -570,7 +573,8 @@ function ProjectDetail() {
                             <legend>{"Owner(s)"}</legend>
                             { selectOwners }
                         </FormGroup>
-                        { tasks.length !== 0 ?
+                        { 
+                            tasks.length !== 0 ?
                             <FormGroup className="prerequisites">
                                 Prerequisites:
                                 { selectPrere }

@@ -22,7 +22,6 @@ new collection          projectGantt --> only store tasks for project
     ]
 }
 
-
 similar experience with excel gantt bars but more interactive
 
 information will be stored into a new collection (projectGannt), generate necessary data after submitting a task, async function withouth interferring user interface
@@ -34,9 +33,6 @@ Main Usages          this view will only focus on tasks
     red line from one person's task to another task
 3. 
 4. 
-
-
-
 
 
 Now we have Users collection
@@ -60,7 +56,6 @@ structure of a user
     ],
     ...
 }
-
 */
 
 
