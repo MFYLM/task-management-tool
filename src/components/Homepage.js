@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Navigate, Link, Route } from "react-router-dom";
+import { Navigate, Link, Route, useNavigate } from "react-router-dom";
 import { Modal, ModalBody, ModalHeader, ModalFooter, Button, FormGroup, Form, Input, Container } from "reactstrap";
 import Task from "./Task";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -18,6 +18,8 @@ function Home() {
 
     const [isEditProject, setIsEditProject] = useState(false);
     const [editProject, setEditProject] = useState(null);
+
+    const navigate = useNavigate();
 
     /*
     a project object                 --> object
@@ -41,9 +43,22 @@ function Home() {
     */
 
     useEffect(() => {
+        sessionStorage.setItem("tab", "0");
+    });
+    
+
+    useEffect(() => {
         // retrieve project list in here
         async function getProjects() {
-            const response = await fetch("http://localhost:8000/record");
+            const response = await fetch("http://localhost:8000/record", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email: sessionStorage.email
+                })
+            });
 
             if (!response.ok)
             {
@@ -55,6 +70,11 @@ function Home() {
             const projects = await response.json();
             setProjectList(projects);
         };
+
+        if (!sessionStorage.token) {
+            window.alert("Your token expired!");
+            navigate("/", { replace: true });
+        }
 
         getProjects();
 
@@ -161,7 +181,7 @@ function Home() {
         const path = "./projectdetail/" + project._id;
 
         return <div className="project-object" key={project._id}>
-                <Link to={path} state={ {projectId: project._id} }><strong>{project.name}</strong></Link>
+                <Link to={path} state={ { projectId: project._id } }><strong>{project.name}</strong></Link>
                 <p>{project.description}</p>
                 <Button onClick={ () => { setEditProject(project._id); setCollaborators(project.collaborators); setLeader(project.leader); setDescription(project.description); setProjectName(project.name); setIsEditProject(true); } }>Edit Project</Button>
                 <Modal isOpen={isEditProject && editProject === project._id}>
@@ -237,9 +257,6 @@ function Home() {
     );
 
 };
-
-
-
 
 
 export default Home;

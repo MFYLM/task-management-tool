@@ -10,15 +10,14 @@ function LoginPage() {
     const navigate = useNavigate();
 
 
-    async function login() {
-        // TODO: add backend part for login
+    async function login(e) {
+        // TODO: we only need to retrieve projects that include current user
+        e.preventDefault();
 
         const user = {
             username: username,
             password: password
         };
-
-        console.log(user);
 
         const response = await fetch("http://localhost:8000/users/login", {
             method: "POST",
@@ -31,8 +30,15 @@ function LoginPage() {
             return;
         });
 
-        console.log(response);
+        const result = await response.json();
 
+        if (result.success) {
+            sessionStorage.setItem("token", result.token);
+            sessionStorage.setItem("email", username);
+            navigate("/home", { replace: true });
+        } else {
+            window.alert(result.message);
+        }
     };
 
 
@@ -68,7 +74,7 @@ function LoginPage() {
                     <div>
                         password: <input type={"password"} className="password-input" onChange={ (e) => setPassword(e.target.value) } />
                     </div>
-                    <button onClick={login}>login</button>
+                    <button onClick={(e) => login(e)}>login</button>
                 </form>
             </div>
         </div>

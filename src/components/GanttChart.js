@@ -250,7 +250,7 @@ function GanttChart(props) {
             <Chart
                 chartType="Gantt" 
                 width="80%" 
-                height="30%" 
+                height="40%" 
                 data={ data }
                 options={ options }
                 legendToggle

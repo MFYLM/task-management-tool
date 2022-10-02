@@ -34,15 +34,13 @@ function ProjectDetail() {
     const [taskStatus, setTaskStatus] = useState("unstarted");
 
     const [visibleTask, setVisibleTask] = useState(null);
-    const [activeTab, setActiveTab] = useState("0");
+    const [activeTab, setActiveTab] = useState(sessionStorage.getItem("tab"));
     // viewTab nums 0: list view, 1: calender view, 2: flowchart view
     // using sessionStorage to store and it will be cleared after tab is closed
 
     const status = ["unstarted", "inprogress", "completed"];
     const [showStatusDrop, setShowStatusDrop] = useState(false);
-
     const [progressNum, setProgressNum] = useState(0.0);
-
 
     /*
     task array structure
@@ -117,7 +115,7 @@ function ProjectDetail() {
                     </DropdownToggle>
                     <DropdownMenu>
                         { 
-                            status.map( (status) => { 
+                            status.map( (status) => {
                                 let newS = taskStatus === s ? s: taskStatus;
                                 if (status !== newS)
                                     return <DropdownItem onClick={ () => { setTaskStatus(status); } }>{ status }</DropdownItem>;
@@ -468,15 +466,18 @@ function ProjectDetail() {
     async function submitTask() {
         // TODO: submit a new task: change tasks array and update data in db
 
-        if (title === "" || taskDescription === "")
-        {
+        if (title === "" || taskDescription === "") {
             window.alert("Task title or description cannot be empty");
             return;
         }
 
-        if (owners.length === 0)
-        {
+        if (owners.length === 0) {
             window.alert("You need to select owner(s) for a task");
+            return;
+        }
+
+        if (dueDate - startDate < 0) {
+            window.alert("Please choose valid start and end date");
             return;
         }
 
@@ -490,21 +491,21 @@ function ProjectDetail() {
             status: "unstarted"
         }];
 
-        const updatedProject = {
-            id: projectId,
-            name: name,
-            leader: leader,
-            collaborators: collaborators,
-            description: description,
+        const newTask = {
+            // id: projectId,
+            // name: name,
+            // leader: leader,
+            // collaborators: collaborators,
+            // description: description,
             tasks: updatedTasks
         };
 
-        await fetch(`http://localhost:8000/update/${updatedProject.id}`, {
+        await fetch(`http://localhost:8000/${projectId}/task/update`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(updatedProject)
+            body: JSON.stringify(newTask)
         }).catch((err) => {
             if (err) window.alert(err);
             return;
@@ -613,17 +614,17 @@ function ProjectDetail() {
             <div className="tab-views">
                 <Nav tabs>
                     <NavItem>
-                        <NavLink onClick={() => setActiveTab("0")}>
+                        <NavLink onClick={() => { sessionStorage.tab = "0"; setActiveTab("0"); } }>
                             List View
                         </NavLink>
                     </NavItem>
                     <NavItem>
-                        <NavLink onClick={() => setActiveTab("2")}>
+                        <NavLink onClick={() => { sessionStorage.tab = "2"; setActiveTab("2"); } }>
                             Flowchart View
                         </NavLink>
                     </NavItem>
                     <NavItem>
-                        <NavLink onClick={() => setActiveTab("1")}>
+                        <NavLink onClick={() => { sessionStorage.tab = "1"; setActiveTab("1"); } }>
                             Gantt Chart
                         </NavLink>
                     </NavItem>

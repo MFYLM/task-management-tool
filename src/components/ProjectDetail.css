@@ -4,7 +4,6 @@
     float: right;
 }
 
-
 .edit-task-modal .modal-header .close-btn {
     float: right;
     position: relative;
@@ -16,17 +15,14 @@
     position: relative;
 }
 
-
 .textarea-edit-modal {
     border: 2px solid black;
     border-radius: 2%;
 }
 
-
 .float-container {
     padding: 5%;
 }
-
 
 .single-collaborator {
     border: 1px solid black;
@@ -40,7 +36,6 @@
     border-radius: 5%;
 }
 
-
 .table-raw {
     margin: auto;
     flex-wrap: wrap;
@@ -52,12 +47,15 @@
     margin: 5px;
 }
 
-
 .project-detail .tab-views .nav-tabs {
     display: flex;
     justify-content: center;
 }
 
 .project-detail .tab-views .nav-item {
+    cursor: pointer;
+}
+
+.project-detail .table {
     cursor: pointer;
 }
